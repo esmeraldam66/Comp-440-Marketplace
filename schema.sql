@@ -40,7 +40,24 @@ CREATE TABLE IF NOT EXISTS `category` (
     CHECK (REGEXP_LIKE(categoryName, '^[a-z]+$', 'c') = 1)
 );
 
-DROP TRIGGER IF EXISTS limit_items_per_day;
-
-
-
+DELIMITER //
+CREATE PROCEDURE add_item(
+    IN p_title VARCHAR(100),
+    IN p_description TEXT,
+    IN p_price DECIMAL (10,2),
+    IN p_username VARCHAR(50), 
+    OUT p_itemID INT
+)
+BEGIN
+	IF (SELECT COUNT(*) FROM item
+		WHERE username = p_username AND datePosted = curdate()) >= 2 THEN
+        SIGNAL SQLSTATE '45000'
+			SET MESSAGE_TEXT = 'You may only post 2 items per day.';
+	ELSE
+		INSERT INTO item (title, description, price, datePosted, username)
+        VALUES (p_title, p_description, p_price, curdate(), p_username);
+		SET p_itemID = LAST_INSERT_ID();
+    END IF;
+END//
+DELIMITER ;
+	
