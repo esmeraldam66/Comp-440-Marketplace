@@ -42,18 +42,5 @@ CREATE TABLE IF NOT EXISTS `category` (
 
 DROP TRIGGER IF EXISTS limit_items_per_day;
 
-DELIMITER //
-CREATE TRIGGER limit_items_per_day
-BEFORE INSERT ON item
-FOR EACH ROW
-BEGIN
-	IF(SELECT COUNT(*) FROM item 
-		WHERE username = NEW.username
-			AND datePosted = NEW.datePosted) >= 2 THEN
-		SIGNAL SQLSTATE '45000'
-				SET MESSAGE_TEXT = 'You can post at most 2 items per day.';
-	END IF;
-END//
-DELIMITER ;
 
 
