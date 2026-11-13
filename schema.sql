@@ -40,6 +40,7 @@ CREATE TABLE IF NOT EXISTS `category` (
     CHECK (REGEXP_LIKE(categoryName, '^[a-z]+$', 'c') = 1)
 );
 
+DROP PROCEDURE IF EXISTS add_item;
 DELIMITER //
 CREATE PROCEDURE add_item(
     IN p_title VARCHAR(100),
@@ -57,6 +58,30 @@ BEGIN
 		INSERT INTO item (title, description, price, datePosted, username)
         VALUES (p_title, p_description, p_price, curdate(), p_username);
 		SET p_itemID = LAST_INSERT_ID();
+    END IF;
+END//
+DELIMITER ;
+
+DROP PROCEDURE IF EXISTS add_review;
+DELIMITER //
+CREATE PROCEDURE add_review(
+    IN p_rating VARCHAR(10),
+    IN p_comment VARCHAR(300),
+    IN p_itemID INT,
+    IN p_username VARCHAR(50)
+)
+BEGIN
+	IF p_username = (SELECT username FROM item WHERE itemID = p_itemID) THEN
+		SIGNAL SQLSTATE '45000'
+			SET MESSAGE_TEXT = 'You cannot review your own item.';
+    
+    ELSEIF (SELECT COUNT(*) FROM review
+		WHERE username = p_username AND reviewDate = curdate()) >= 2 THEN
+        SIGNAL SQLSTATE '45000'
+			SET MESSAGE_TEXT = 'You may only review 2 items per day.';
+	ELSE
+		INSERT INTO review (rating, comment, reviewDate, itemID, username)
+        VALUES (p_rating, p_comment, curdate(), p_itemID, p_username);
     END IF;
 END//
 DELIMITER ;
