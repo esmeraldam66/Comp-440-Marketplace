@@ -15,7 +15,7 @@ DB_CONFIG = {
 def get_connection():
     return mysql.connector.connect(**DB_CONFIG)
 
-
+current_user = None
 
 def register_user(username, password, confirm, first, last, email, phone):
 
@@ -156,6 +156,7 @@ def login_page():
     password_entry.pack(pady=5)
 
     def login():
+        global current_user
         username = username_entry.get().strip()
         password = password_entry.get()
 
@@ -165,14 +166,32 @@ def login_page():
 
         ok, msg = login_user(username, password)
         if ok:
-            messagebox.showinfo("Login", msg)
+            current_user = username
+            menu_page()
         else:
             messagebox.showerror("Login", msg)
 
     tk.Button(window, text="Login", command=login).pack(pady=10)
     tk.Button(window, text="Create Account", command=signup_page).pack()
 
+def menu_page():
+    clear_window()
+    tk.Label(window, text="Menu", font=("Arial", 20)).pack(pady=15)
+    tk.Label(window, text=f"Logged in as: {current_user}").pack(pady=5)
+    for name in ["Add Item", "My Items", "Categories", "Search", "Write Review", "Queries"]:
+        tk.Button(
+            window, text=name, width=20,
+            command=lambda n=name: messagebox.showinfo(n, "Coming soon"),
+        ).pack(pady=4)
 
+    tk.Button(window, text="Log out", command=logout).pack(pady=15)
+
+def logout():
+    global current_user
+    current_user = None
+    login_page()
+
+    
 window = tk.Tk()
 window.title("User Registration and Login")
 window.geometry("400x600")
