@@ -85,4 +85,16 @@ BEGIN
     END IF;
 END//
 DELIMITER ;
+
+DROP TRIGGER IF EXISTS no_review_modification;
+DELIMITER //
+CREATE TRIGGER no_review_modification
+BEFORE UPDATE ON review
+FOR EACH ROW
+BEGIN
+	SIGNAL SQLSTATE '45000'
+			SET MESSAGE_TEXT = 'You may not modify your review.';
+END//
+DELIMITER ;
+
 	
