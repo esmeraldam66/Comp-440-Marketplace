@@ -108,6 +108,38 @@ def update_item_price(item_id, price_text):
         if conn is not None:
             conn.close()
 
+def delete_item(item_id):
+    if current_user is None:
+        return False, "Please log in first."
+
+    conn = None
+
+    try:
+        conn = get_connection()
+        cur = conn.cursor()
+
+        cur.execute(
+            "DELETE FROM item WHERE itemID = %s AND username = %s",
+            (item_id, current_user)
+        )
+
+        if cur.rowcount == 0:
+            conn.rollback()
+            return False, "Item not found or you do not own it."
+
+        conn.commit()
+        return True, "Item deleted."
+
+    except mysql.connector.Error as error:
+        if conn is not None:
+            conn.rollback()
+
+        return False, error.msg
+
+    finally:
+        if conn is not None:
+            conn.close()
+            
 def get_my_items():
     conn = None
 
@@ -428,7 +460,22 @@ def change_price(item_id):
         my_items_page()
     else:
         messagebox.showerror("Update Price", msg)
-    
+
+def remove_item(item_id):
+    if not messagebox.askyesno(
+        "Delete Item",
+        f"Delete item #{item_id}? Its categories and reviews will be deleted too."
+    ):
+        return
+
+    ok, msg = delete_item(item_id)
+
+    if ok:
+        messagebox.showinfo("Delete Item", msg)
+        my_items_page()
+    else:
+        messagebox.showerror("Delete Item", msg)
+        
 def my_items_page():
     clear_window()
 
@@ -473,6 +520,11 @@ def my_items_page():
                 command=lambda selected_id=item_id: change_price(
                     selected_id
                 )
+            ).pack(pady=4)
+            tk.Button(
+                window,
+                text="Delete Item",
+                command=lambda selected_id=item_id: remove_item(selected_id)
             ).pack(pady=4)
 
     tk.Button(
