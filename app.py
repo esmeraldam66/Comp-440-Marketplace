@@ -20,6 +20,39 @@ def get_connection():
 
 current_user = None
 
+def delete_item(item_id):
+    if current_user is None:
+        return False, "Please log in first."
+
+    conn = None
+
+    try:
+        conn = get_connection()
+        cur = conn.cursor()
+
+        cur.execute(
+            "DELETE FROM item "
+            "WHERE itemID = %s AND username = %s",
+            (item_id, current_user)
+        )
+
+        if cur.rowcount == 0:
+            conn.rollback()
+            return False, "Item not found or you do not own it."
+
+        conn.commit()
+        return True, "Item deleted successfully!"
+
+    except mysql.connector.Error as error:
+        if conn is not None:
+            conn.rollback()
+
+        return False, error.msg
+
+    finally:
+        if conn is not None:
+            conn.close()
+            
 def update_item_price(item_id, price_text):
     if current_user is None:
         return False, "Please log in first."
