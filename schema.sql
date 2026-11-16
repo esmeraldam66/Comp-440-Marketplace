@@ -97,4 +97,45 @@ BEGIN
 END//
 DELIMITER ;
 
-	
+CREATE TABLE IF NOT EXISTS daily_posts (
+    username VARCHAR(50) NOT NULL,
+    postDate DATE NOT NULL,
+    postCount INT NOT NULL DEFAULT 0,
+    PRIMARY KEY (username, postDate),
+    FOREIGN KEY (username) REFERENCES `user`(username)
+        ON DELETE CASCADE,
+    CHECK (postCount BETWEEN 0 AND 2)
+);
+
+INSERT INTO daily_posts (username, postDate, postCount)
+SELECT username, datePosted, COUNT(*)
+FROM item
+GROUP BY username, datePosted;
+
+DROP TRIGGER IF EXISTS limit_daily_posts;
+
+DELIMITER //
+
+CREATE TRIGGER limit_daily_posts
+BEFORE INSERT ON item
+FOR EACH ROW
+BEGIN
+    SET NEW.datePosted = CURDATE();
+
+    INSERT INTO daily_posts (username, postDate, postCount)
+    VALUES (NEW.username, CURDATE(), 0)
+    ON DUPLICATE KEY UPDATE postCount = postCount;
+
+    UPDATE daily_posts
+    SET postCount = postCount + 1
+    WHERE username = NEW.username
+      AND postDate = CURDATE()
+      AND postCount < 2;
+
+    IF ROW_COUNT() = 0 THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'You may only post 2 items per day.';
+    END IF;
+END//
+
+DELIMITER ;
