@@ -107,7 +107,7 @@ CREATE TABLE IF NOT EXISTS daily_posts (
     CHECK (postCount BETWEEN 0 AND 2)
 );
 
-INSERT INTO daily_posts (username, postDate, postCount)
+INSERT IGNORE INTO daily_posts (username, postDate, postCount)
 SELECT username, datePosted, COUNT(*)
 FROM item
 GROUP BY username, datePosted;
